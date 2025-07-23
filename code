@@ -1,0 +1,143 @@
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <string> // ✅ needed for getline
+using namespace std;
+
+int main() {
+    float paycheck;
+    float fixedSaving = 0;         // Fixed saving for old age
+    float totalFixedSavings = 0;   // Total fixed savings
+    float accountBalance = 0;      // Total leftover money for spending
+    string wishItem;
+    float wishCost = 0;
+
+    vector<string> billNames;
+    vector<float> billAmounts;
+
+    // Load previous totals from file
+    ifstream infile("savings.txt");
+    if (infile.is_open()) {
+        infile >> totalFixedSavings >> accountBalance;
+        infile.close();
+    }
+
+    cout << "Enter your paycheck amount: $";
+    cin >> paycheck;
+    cin.ignore(); // clear leftover newline
+
+    // Input bills
+    while (true) {
+        char hasBill;
+        cout << "Do you have a bill to add? (Y/N): ";
+        cin >> hasBill;
+        cin.ignore(); // clear leftover newline
+
+        if (hasBill == 'N' || hasBill == 'n') {
+            break;
+        }
+        else if (hasBill == 'Y' || hasBill == 'y') {
+            string billName;
+            float billAmount;
+            cout << "What is the bill for? ";
+            getline(cin, billName); // ✅ safe for spaces
+
+            cout << "Enter amount for " << billName << ": $";
+            cin >> billAmount;
+            cin.ignore(); // clear newline after float input
+
+            billNames.push_back(billName);
+            billAmounts.push_back(billAmount);
+        }
+        else {
+            cout << "Please enter Y or N.\n";
+        }
+    }
+
+    float totalBills = 0;
+    for (float amt : billAmounts) {
+        totalBills += amt;
+    }
+
+    if (paycheck < totalBills) {
+        float credit = totalBills - paycheck;
+        if (accountBalance >= credit) {
+            accountBalance -= credit;  // Cover with leftover balance
+            cout << "\nBills covered with leftover account balance.\n";
+        }
+        else {
+            float stillShort = credit - accountBalance;
+            accountBalance = 0;
+            cout << "\nNot enough in leftover account balance!\n";
+            cout << "You are in credit by: $" << stillShort << endl;
+        }
+
+        cout << "\n--- Summary ---\n";
+        cout << "Total bills: $" << totalBills << endl;
+        for (size_t i = 0; i < billNames.size(); i++) {
+            cout << "- " << billNames[i] << ": $" << billAmounts[i] << endl;
+        }
+
+        cout << "\n>> Total Fixed Savings Till Now (old age): $" << totalFixedSavings << endl;
+        cout << ">> Total Remaining Account Balance Till Now: $" << accountBalance << endl;
+
+        ofstream outfile("savings.txt");
+        outfile << totalFixedSavings << " " << accountBalance;
+        outfile.close();
+
+        system("pause");
+        return 0;
+    }
+
+    cout << "How much do you want to save as fixed saving? $";
+    cin >> fixedSaving;
+    cin.ignore(); // clear newline after float input
+
+    if (fixedSaving > (paycheck - totalBills)) {
+        cout << "Not enough money to save fixed saving. Fixed saving skipped.\n";
+        fixedSaving = 0;
+    }
+
+    cout << "Enter wishlist item: ";
+    getline(cin, wishItem); // ✅ safe for spaces
+
+    cout << "Enter wishlist cost: $";
+    cin >> wishCost;
+    cin.ignore(); // optional, for good practice
+
+    // Leftover THIS MONTH ONLY (no old balance used)
+    float leftoverThisMonth = paycheck - totalBills - fixedSaving;
+
+    // Add fixed saving to total fixed savings
+    totalFixedSavings += fixedSaving;
+
+    // Add leftoverThisMonth to total account balance
+    accountBalance += leftoverThisMonth;
+
+    cout << "\n--- Summary ---\n";
+    cout << "Total bills: $" << totalBills << endl;
+    for (size_t i = 0; i < billNames.size(); i++) {
+        cout << "- " << billNames[i] << ": $" << billAmounts[i] << endl;
+    }
+
+    cout << "\nThis month remaining amount: $" << leftoverThisMonth << endl;
+    cout << "Fixed saving amount this month: $" << fixedSaving << endl;
+    cout << ">> Total Fixed Savings Till Now (old age): $" << totalFixedSavings << endl;
+    cout << ">> Total Remaining Account Balance Till Now: $" << accountBalance << endl;
+
+    if (accountBalance >= wishCost) {
+        cout << "You have enough leftover to buy your wishlist item: "
+            << wishItem << "!\nGo for it! \n";
+    }
+    else {
+        cout << "Keep saving for your wishlist item.\n";
+    }
+
+    // Save updated totals
+    ofstream outfile("savings.txt");
+    outfile << totalFixedSavings << " " << accountBalance;
+    outfile.close();
+
+    system("pause");
+    return 0;
+}
